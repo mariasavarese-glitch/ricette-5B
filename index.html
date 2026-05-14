@@ -1176,25 +1176,184 @@ function buildSdgHtml(recipeId) {
     </div>`;
 }
 
-/* ── PRINT SCHEDA ── */
+/* ── PRINT SCHEDA COMPLETA (Ricetta + Analisi + HACCP) ── */
 function printSchedaById(id) {
-  // Make sure schede are rendered
-  if (document.getElementById('schede-grid').children.length === 0) renderSchede('all');
-  // Find the matching scheda by scanning for the recipe title
   const r = data.find(x => x.id === id);
   if (!r) return;
-  const all = document.querySelectorAll('#schede-grid .scheda');
-  let target = null;
-  all.forEach(s => { if (s.querySelector('.scheda-title') && s.querySelector('.scheda-title').textContent === r.title) target = s; });
-  if (!target) { renderSchede('all'); return printSchedaById(id); }
-  document.querySelectorAll('.scheda').forEach(s => s.classList.remove('printing'));
-  target.classList.add('printing');
-  const schedePanel = document.getElementById('view-schede');
-  const wasActive = schedePanel.classList.contains('active');
-  schedePanel.classList.add('active');
-  window.print();
-  if (!wasActive) schedePanel.classList.remove('active');
-  target.classList.remove('printing');
+  const ex = extraData[id] || {};
+  const appro = r.approfondimento || {};
+  const adapt = ex.adattamenti || {};
+  const haccp = (ex.haccp || {fasi:[]});
+  const sdgs  = sdgData[id] || [];
+  const marchioBadge = {DOP:'🏆 DOP',IGP:'🌿 IGP','PAT':'📜 PAT','Presidio Slow Food':'🐌 Presidio Slow Food'}[appro.marchio]||appro.marchio||'';
+  const sdgColors = {1:'#e5243b',2:'#dda63a',3:'#4c9f38',4:'#c5192d',5:'#ff3a21',6:'#26bde2',7:'#fcc30b',8:'#a21942',9:'#fd6925',10:'#dd1367',11:'#fd9d24',12:'#bf8b2e',13:'#3f7e44',14:'#0a97d9',15:'#56c02b',16:'#00689d',17:'#19486a'};
+
+  /* ── helpers ── */
+  const sec = (icon, label, content, bg='#fff', color='#1B4F72') => `
+    <div class="section" style="background:${bg};border-left:3px solid ${color}">
+      <div class="sec-label" style="color:${color}">${icon} ${label}</div>
+      <div class="sec-body">${content}</div>
+    </div>`;
+
+  const haccpFlow = haccp.fasi.map((f,i) => `
+    <div class="hf-step">
+      ${i>0?'<div class="hf-arrow">▼</div>':''}
+      <div class="hf-box ${f.ccp?'ccp':''}">
+        <div class="hf-head">
+          <span class="hf-name">${i+1}. ${f.nome}</span>
+          <span class="hf-badge ${f.ccp?'ccp-badge':'ok-badge'}">${f.ccp?'CCP':'CP'}</span>
+        </div>
+        <div class="hf-body">
+          <div><span class="hf-lbl">⚠ Pericolo</span><p>${f.pericolo}</p></div>
+          <div><span class="hf-lbl">✓ Misura di controllo</span><p>${f.misura}</p></div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  const adaptCards = Object.entries(adapt).map(([k,v])=>`
+    <div class="adapt-card">
+      <span class="adapt-lbl">${{vegan:'🌱 Vegan',lattosio:'🥛 Lattosio',celiaci:'🌾 Celiaci',halal:'☪ Halal',kosher:'✡ Kosher'}[k]||k}</span>
+      <p>${v}</p>
+    </div>`).join('');
+
+  const sdgCards = sdgs.map(s=>`
+    <div class="sdg-card">
+      <div class="sdg-badge" style="background:${sdgColors[s.n]||'#333'}">${s.n}<br><small>${s.titolo.split(' ').slice(0,2).join(' ')}</small></div>
+      <div><strong>SDG ${s.n} — ${s.titolo}</strong><p>${s.desc}</p></div>
+    </div>`).join('');
+
+  const html = `<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8">
+<title>${r.numero}. ${r.title} — Scheda completa</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Crimson Pro',serif;font-size:10pt;color:#1a1a1a;background:#fff;padding:1cm}
+h1{font-family:'Playfair Display',serif;font-size:18pt;font-weight:400;margin-bottom:.15cm}
+.subtitle{font-size:9pt;color:#555;letter-spacing:.08em;text-transform:uppercase;margin-bottom:.4cm}
+.site-name{font-size:8pt;color:#888;text-transform:uppercase;letter-spacing:.12em;margin-bottom:.6cm;border-bottom:1px solid #ddd;padding-bottom:.25cm}
+.part-title{font-family:'Playfair Display',serif;font-size:13pt;font-weight:400;color:#1B4F72;border-bottom:2px solid #1B4F72;margin:1cm 0 .4cm;padding-bottom:.2cm;page-break-before:always}
+.part-title:first-of-type{page-break-before:avoid;margin-top:.3cm}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:.35cm}
+.section{border-radius:3px;padding:.35cm .45cm;margin-bottom:.35cm;break-inside:avoid}
+.sec-label{font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:.18cm}
+.sec-body{font-size:9.5pt;line-height:1.55;font-weight:300}
+.full{grid-column:1/-1}
+/* macros */
+.macros{display:grid;grid-template-columns:repeat(4,1fr);background:#f0f4f8;border-radius:3px;text-align:center;padding:.3cm;margin-bottom:.35cm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.macro-val{font-family:'Playfair Display',serif;font-size:14pt;font-weight:700;color:#1B4F72}
+.macro-lbl{font-size:7pt;letter-spacing:.07em;text-transform:uppercase;opacity:.55;margin-top:2px}
+.macro-note{grid-column:1/-1;font-size:7pt;font-style:italic;opacity:.45;text-align:center;margin-top:.15cm}
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:.2cm;margin-top:.2cm}
+.chip{font-size:8pt;padding:.1cm .35cm;border-radius:2px;background:#EBF5FB;color:#1B4F72}
+.chip.dop{background:#fdf6e3;color:#7a5c10}
+.chip.igp{background:#ebf5fb;color:#1a5276}
+.chip.km0{background:#eafaf1;color:#1d6a39}
+/* HACCP */
+.hf-step{margin-bottom:.2cm}
+.hf-arrow{text-align:center;color:#aaa;font-size:9pt;margin:.1cm 0}
+.hf-box{border:1px solid #ccc;border-radius:3px;overflow:hidden;break-inside:avoid}
+.hf-box.ccp{border:2px solid #e74c3c}
+.hf-head{display:flex;align-items:center;background:#f5f5f5;padding:.2cm .35cm;gap:.3cm}
+.hf-box.ccp .hf-head{background:#fdedec}
+.hf-name{flex:1;font-size:9pt;font-weight:600}
+.hf-badge{font-size:7pt;letter-spacing:.08em;text-transform:uppercase;padding:.1cm .3cm;border-radius:2px;color:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ccp-badge{background:#e74c3c}
+.ok-badge{background:#27ae60}
+.hf-body{display:grid;grid-template-columns:1fr 1fr;gap:.2cm .5cm;padding:.25cm .35cm;font-size:8.5pt;font-weight:300;line-height:1.45}
+.hf-lbl{font-size:7pt;letter-spacing:.1em;text-transform:uppercase;color:#5D6D7E;display:block;margin-bottom:.1cm}
+/* adattamenti */
+.adapt-grid{display:grid;grid-template-columns:1fr 1fr;gap:.3cm}
+.adapt-card{background:#f8f9fa;border:1px solid #ddd;border-radius:3px;padding:.3cm .4cm;break-inside:avoid}
+.adapt-lbl{font-size:7.5pt;letter-spacing:.1em;text-transform:uppercase;font-weight:700;display:block;margin-bottom:.15cm}
+.adapt-card p{font-size:8.5pt;font-weight:300;line-height:1.45}
+/* SDG */
+.sdg-grid{display:grid;grid-template-columns:1fr 1fr;gap:.3cm}
+.sdg-card{display:flex;gap:.3cm;align-items:flex-start;border:1px solid #dce4f0;border-radius:3px;padding:.3cm .4cm;break-inside:avoid;background:#fff}
+.sdg-badge{flex-shrink:0;width:38px;height:38px;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:11pt;font-weight:800;color:#fff;line-height:1;text-align:center;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.sdg-badge small{font-size:5.5pt;font-weight:600;line-height:1.1;letter-spacing:.02em;text-transform:uppercase;margin-top:1px}
+.sdg-card strong{font-size:8.5pt;font-weight:600;display:block;margin-bottom:.1cm;color:#1a3a5c}
+.sdg-card p{font-size:8pt;font-weight:300;line-height:1.45}
+/* header stripe */
+.header-stripe{height:5px;background:linear-gradient(90deg,#1B4F72,#c9a84c,#4c9f38);margin-bottom:.5cm;border-radius:2px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+/* allergeni */
+.allerg-box{background:#FDEBD0;border-radius:3px;padding:.3cm .45cm;color:#784212;font-weight:400;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+/* approfondimento */
+.appro-box{background:#fdf6e3;border-left:3px solid #c9a84c;border-radius:3px;padding:.35cm .45cm;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.appro-title{font-family:'Playfair Display',serif;font-size:10pt;color:#7a5c10;margin:.1cm 0 .2cm}
+@page{margin:1.2cm 1cm;size:A4}
+@media print{body{padding:0}}
+</style></head><body>
+<div class="header-stripe"></div>
+<div class="site-name">Piatti Salutari Campani · Cucina Mediterranea · DOP · IGP · km0</div>
+<h1>${r.numero}. ${r.title}</h1>
+<div class="subtitle">${r.catLabel}${r.chef?' · Chef / Autore: '+r.chef:''} · ${r.porzioni}</div>
+
+<!-- ══ PARTE 1 — SCHEDA RICETTA ══ -->
+<div class="part-title" style="page-break-before:avoid">🃏 Scheda Ricetta</div>
+<div class="grid-2">
+  <div class="full">
+    <div class="sec-label" style="color:#1B4F72;font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;margin-bottom:.2cm">🛒 Ingredienti</div>
+    <div class="chips">${r.ingChips.map(c=>`<span class="chip ${c.c}">${c.t}</span>`).join('')}</div>
+    <p style="font-size:8.5pt;opacity:.65;margin-top:.2cm;line-height:1.5">${r.ingredients.join(' · ')}</p>
+  </div>
+  <div class="allerg-box">
+    <div style="font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;font-weight:600;margin-bottom:.15cm">⚠️ Allergeni</div>
+    <p style="font-size:9pt">${r.allergeni}</p>
+  </div>
+  <div class="section" style="background:#f8f9fa;border-left:3px solid #aaa">
+    <div class="sec-label" style="color:#555">🌿 Stagionalità</div>
+    <div class="sec-body" style="font-style:italic">${r.stagione}</div>
+  </div>
+  <div class="section full" style="background:#fff;border-left:3px solid #1B4F72">
+    <div class="sec-label" style="color:#1B4F72">👨‍🍳 Procedimento</div>
+    <div class="sec-body">${r.procedimento}</div>
+  </div>
+  ${appro.nome?`<div class="appro-box full">
+    <div style="font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:#7a5c10;font-weight:600;margin-bottom:.1cm">🏅 Eccellenza territoriale — ${marchioBadge}</div>
+    <div class="appro-title">${appro.nome}</div>
+    <p style="font-size:9pt;font-weight:300;line-height:1.55;color:#5a4010">${appro.descrizione}</p>
+  </div>`:''}
+</div>
+
+<!-- ══ PARTE 2 — ANALISI NUTRIZIONALE ══ -->
+<div class="part-title">🩺 Analisi Nutrizionale</div>
+<div class="macros">
+  <div><div class="macro-val">${r.macros.kcal}</div><div class="macro-lbl">kcal</div></div>
+  <div><div class="macro-val">${r.macros.prot}g</div><div class="macro-lbl">proteine</div></div>
+  <div><div class="macro-val">${r.macros.carb}g</div><div class="macro-lbl">carboidrati</div></div>
+  <div><div class="macro-val">${r.macros.grassi}g</div><div class="macro-lbl">grassi</div></div>
+  <div class="macro-note">⚠ valori per porzione stimati da tabelle CREA 2019 · calcolo approssimativo</div>
+</div>
+<div class="grid-2">
+  ${sec('🩺','Motivazione nutrizionale — Prevenzione obesità &amp; sindrome metabolica', r.motivazione, '#EAFAF1','#1D6A39')}
+  ${sec('🍳','Tecniche di cottura e benefici nutrizionali', r.cottura, '#FBF7F0','#5D4037')}
+  ${sec('🔬','Prevenzione oncologica', r.antitumorale, '#F5EEF8','#6C3483')}
+  ${sec('💊','Prevenzione Diabete T2, Ipertensione &amp; Aterosclerosi', ex.diabete||'', '#FDEDEC','#C0392B')}
+  <div class="full" style="margin-top:.2cm">
+    <div style="font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:#1B4F72;font-weight:600;margin-bottom:.25cm">🍽 Adattamenti per esigenze dietetiche e religiose</div>
+    <div class="adapt-grid">${adaptCards}</div>
+  </div>
+  <div class="full" style="margin-top:.35cm">
+    <div style="font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:#1a3a5c;font-weight:600;margin-bottom:.25cm">🌍 Agenda 2030 — Sustainable Development Goals</div>
+    <div class="sdg-grid">${sdgCards}</div>
+  </div>
+</div>
+
+<!-- ══ PARTE 3 — HACCP ══ -->
+<div class="part-title">🔐 Piano HACCP</div>
+<div style="display:flex;gap:.8cm;font-size:8pt;margin-bottom:.4cm;align-items:center">
+  <span><span class="hf-badge ccp-badge" style="font-size:7pt">CCP</span> &nbsp;Punto Critico di Controllo</span>
+  <span><span class="hf-badge ok-badge" style="font-size:7pt">CP</span> &nbsp;Punto di Controllo</span>
+</div>
+${haccpFlow}
+
+<script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
+</body></html>`;
+
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write(html);
+  w.document.close();
 }
 
 renderCards('all');

@@ -130,8 +130,12 @@ body{background:var(--cream);font-family:'Crimson Pro',serif;color:var(--deep);m
 .macro{text-align:center}
 .macro-val{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:700;color:var(--deep);line-height:1}
 .macro-label{font-size:.63rem;letter-spacing:.07em;text-transform:uppercase;opacity:.5;margin-top:.18rem;display:block}
+.macro-approx{grid-column:1/-1;text-align:center;font-size:.65rem;font-style:italic;opacity:.45;padding:.2rem 0 .3rem;letter-spacing:.03em}
 /* Card hint strip instead of button */
-.card-hint{display:block;width:100%;padding:.45rem;background:var(--appro-bg);color:var(--appro);border:none;font-family:'Crimson Pro',serif;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase;text-align:center;border-top:1px solid rgba(201,168,76,.3)}
+.card-footer{display:flex;align-items:center;justify-content:space-between;border-top:1px solid rgba(201,168,76,.3);background:var(--appro-bg)}
+.card-hint-text{flex:1;padding:.45rem .75rem;color:var(--appro);font-family:'Crimson Pro',serif;font-size:.75rem;letter-spacing:.1em;text-transform:uppercase}
+.card-print-btn{display:flex;align-items:center;gap:.3rem;padding:.45rem .8rem;border:none;border-left:1px solid rgba(201,168,76,.3);background:transparent;color:var(--navy);font-family:'Crimson Pro',serif;font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;transition:background .18s;flex-shrink:0}
+.card-print-btn:hover{background:var(--navy);color:#fff}
 
 .acc-mare{background:linear-gradient(90deg,var(--sea),#5a9bb0)}
 .acc-legumi{background:linear-gradient(90deg,var(--terracotta),#d4845a)}
@@ -184,6 +188,23 @@ body{background:var(--cream);font-family:'Crimson Pro',serif;color:var(--deep);m
 
 footer{text-align:center;padding:1.8rem;font-size:.73rem;letter-spacing:.1em;text-transform:uppercase;opacity:.4}
 
+/* ─── SDG ─────────────────────────────────────────── */
+.sdg-section{padding:.9rem 1.4rem 1rem;border-top:1px solid var(--sky2);background:#f9fafc}
+.sdg-section-label{font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:#1a3a5c;font-weight:400;margin-bottom:.7rem;display:flex;align-items:center;gap:.4rem}
+.sdg-grid{display:flex;flex-wrap:wrap;gap:.6rem}
+.sdg-card{display:flex;gap:.6rem;align-items:flex-start;background:#fff;border-radius:3px;border:1px solid #dce4f0;padding:.55rem .7rem;flex:1;min-width:260px}
+.sdg-badge{flex-shrink:0;width:42px;height:42px;border-radius:3px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:.65rem;font-weight:700;color:#fff;line-height:1.15;text-align:center}
+.sdg-text{flex:1}
+.sdg-title{font-size:.78rem;font-weight:600;color:#1a3a5c;margin-bottom:.18rem;line-height:1.3}
+.sdg-desc{font-size:.8rem;line-height:1.55;color:#2a3a50;font-weight:300}
+/* SDG colors */
+.sdg-1{background:#e5243b}.sdg-2{background:#dda63a}.sdg-3{background:#4c9f38}
+.sdg-4{background:#c5192d}.sdg-5{background:#ff3a21}.sdg-6{background:#26bde2}
+.sdg-7{background:#fcc30b}.sdg-8{background:#a21942}.sdg-9{background:#fd6925}
+.sdg-10{background:#dd1367}.sdg-11{background:#fd9d24}.sdg-12{background:#bf8b2e}
+.sdg-13{background:#3f7e44}.sdg-14{background:#0a97d9}.sdg-15{background:#56c02b}
+.sdg-16{background:#00689d}.sdg-17{background:#19486a}
+
 @media(max-width:600px){
   .cards-grid,.schede-grid{padding:0 1rem 3rem}
   .site-header{padding:2.5rem 1rem 1.2rem}
@@ -229,6 +250,46 @@ footer{text-align:center;padding:1.8rem;font-size:.73rem;letter-spacing:.1em;tex
 .haccp-field p {font-size:.82rem;line-height:1.5;font-weight:300}
 .haccp-legend {display:flex;gap:1rem;margin-top:.5rem;font-size:.75rem;align-items:center}
 .haccp-legend span {display:flex;align-items:center;gap:.3rem}
+
+/* ─── PRINT BUTTON ────────────────────────────────── */
+.scheda-print-btn{
+  display:flex;align-items:center;gap:.45rem;
+  margin:.7rem 1.4rem .2rem auto;width:fit-content;
+  padding:.42rem .95rem;border-radius:3px;
+  border:1.5px solid var(--navy);background:#fff;color:var(--navy);
+  font-family:'Crimson Pro',serif;font-size:.8rem;letter-spacing:.08em;
+  text-transform:uppercase;cursor:pointer;transition:all .2s;
+}
+.scheda-print-btn:hover{background:var(--navy);color:#fff}
+
+/* ─── PRINT STYLES ────────────────────────────────── */
+@media print{
+  body{background:#fff !important;font-size:10pt;color:#000}
+  .site-header,.view-tabs,.filter-bar,
+  #editor-sidebar,#edit-fab,#toast,footer,
+  .scheda:not(.printing),.scheda-print-btn,.card-print-btn,
+  .modal-overlay{display:none !important}
+  .view-panel{display:block !important}
+  .scheda.printing{
+    display:block !important;box-shadow:none !important;
+    border:none;animation:none !important;opacity:1 !important;
+    page-break-inside:auto;
+  }
+  .scheda-body{grid-template-columns:1fr 1fr}
+  .scheda-cell-content,.scheda-cell-label,.adapt-text,.sdg-desc,.haccp-field p{font-size:9pt;line-height:1.45}
+  .sdg-badge,.haccp-ccp-badge,.haccp-ok-badge,
+  .scheda-cell.motiv .scheda-cell-content,
+  .scheda-cell.antitumorale .scheda-cell-content,
+  .scheda-cell.diabete .scheda-cell-content,
+  .scheda-cell.approfondimento .scheda-cell-content,
+  .scheda-cell.allergeni .scheda-cell-content,
+  .macros-row,.ing-chip{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .sdg-grid{flex-wrap:wrap}
+  .sdg-card{min-width:46%;break-inside:avoid;page-break-inside:avoid}
+  .adapt-grid{grid-template-columns:1fr 1fr}
+  .haccp-box{break-inside:avoid;page-break-inside:avoid}
+  @page{margin:1.2cm 1cm;size:A4}
+}
 </style>
 </head>
 <body>
@@ -695,8 +756,15 @@ function renderCards(filter) {
         <div class="macro"><div class="macro-val">${r.macros.prot}g</div><span class="macro-label">proteine</span></div>
         <div class="macro"><div class="macro-val">${r.macros.carb}g</div><span class="macro-label">carboidrati</span></div>
         <div class="macro"><div class="macro-val">${r.macros.grassi}g</div><span class="macro-label">grassi</span></div>
+        <div class="macro-approx">⚠ valori per porzione stimati da tabelle CREA 2019 · calcolo approssimativo</div>
       </div>
-      <div class="card-hint">📋 Clicca per la scheda nutrizionale completa</div>
+      <div class="card-footer">
+        <span class="card-hint-text">📋 Clicca per la scheda completa</span>
+        <button class="card-print-btn" onclick="event.stopPropagation();printSchedaById(${r.id})" title="Stampa scheda">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+          Stampa
+        </button>
+      </div>
     `;
     grid.appendChild(card);
   });
@@ -764,6 +832,7 @@ function openModal(id) {
         <div class="macro"><div class="macro-val">${r.macros.prot}g</div><span class="macro-label">proteine</span></div>
         <div class="macro"><div class="macro-val">${r.macros.carb}g</div><span class="macro-label">carboidrati</span></div>
         <div class="macro"><div class="macro-val">${r.macros.grassi}g</div><span class="macro-label">grassi</span></div>
+        <div class="macro-approx">⚠ valori per porzione stimati da tabelle CREA 2019 · calcolo approssimativo</div>
       </div>
     </div>`;
   document.getElementById('modal-overlay').classList.add('open');
@@ -974,11 +1043,13 @@ function renderSchede(filter) {
           <div class="adapt-grid">${adaptHtml}</div>
         </div>
       </div>
+      ${buildSdgHtml(r.id)}
       <div class="macros-row">
         <div class="macro"><div class="macro-val">${r.macros.kcal}</div><span class="macro-label">kcal/porz.</span></div>
         <div class="macro"><div class="macro-val">${r.macros.prot}g</div><span class="macro-label">proteine</span></div>
         <div class="macro"><div class="macro-val">${r.macros.carb}g</div><span class="macro-label">carboidrati</span></div>
         <div class="macro"><div class="macro-val">${r.macros.grassi}g</div><span class="macro-label">grassi</span></div>
+        <div class="macro-approx">⚠ valori per porzione stimati da tabelle CREA 2019 · calcolo approssimativo</div>
       </div>
     `;
     grid.appendChild(s);
@@ -986,6 +1057,146 @@ function renderSchede(filter) {
 }
 
 /* ── RE-INIT ── */
+
+/* ══════════════════════════════════════════════════
+   SDG DATA — Agenda 2030 per ogni ricetta
+══════════════════════════════════════════════════ */
+const sdgData = [
+  /* 0 — Polipetti alla Luciana */
+  [
+    {n:2,  titolo:"Fame zero",           desc:"L'uso di pescato locale (km0) sostiene sistemi alimentari locali resilienti che garantiscono disponibilità di cibo sano e nutriente senza dipendere da filiere globali fragili."},
+    {n:3,  titolo:"Salute e benessere",  desc:"Il piatto è privo di grassi saturi e ricco di proteine magre, omega-3 e licopene: contribuisce alla prevenzione di malattie cardiovascolari, obesità e tumori, obiettivi centrali dell'SDG 3."},
+    {n:12, titolo:"Consumo responsabile",desc:"I polipetti sono cefalopodi con basso livello trofico (si cibano di molluschi bivalvi): il loro consumo ha un'impronta ambientale molto inferiore a quella delle proteine animali terrestri. I pomodorini del Piennolo si conservano appesi senza refrigerazione, riducendo il consumo energetico."},
+    {n:14, titolo:"Vita sott'acqua",     desc:"Privilegiare il polpo da pesca artigianale locale con metodi selettivi (nasse, palamiti) rispetto alla pesca a strascico riduce il danno agli ecosistemi marini del Golfo di Napoli, tutelando la biodiversità marina."}
+  ],
+  /* 1 — Insalata di Farro */
+  [
+    {n:2,  titolo:"Fame zero",           desc:"Il farro è un cereale antico con alto valore nutritivo (proteine 15%, fibre 7%) che richiede meno input agrochimici rispetto al frumento moderno. Recuperarne l'uso contribuisce alla diversificazione delle colture e alla sicurezza alimentare."},
+    {n:3,  titolo:"Salute e benessere",  desc:"La combinazione farro + fagioli + tre varietà di pomodorini fornisce un profilo nutrizionale completo: proteine vegetali, fibre, vitamine e antiossidanti per la prevenzione delle malattie croniche non trasmissibili."},
+    {n:12, titolo:"Consumo responsabile",desc:"Piatto completamente vegetale con ingredienti locali e stagionali: l'impronta idrica e carbonica è minima rispetto a qualsiasi alternativa proteica animale. I pomodorini del Piennolo DOP, prodotti senza irrigazione artificiale intensiva, riducono il consumo idrico agricolo."},
+    {n:15, titolo:"Vita sulla terra",    desc:"Il Pomodorino Insalata di Sorrento PAT è una varietà autoctona locale la cui coltivazione mantiene la biodiversità agraria campana, contrastando la perdita di varietà tradizionali causata dalla standardizzazione delle colture."}
+  ],
+  /* 2 — Orzo con Sgombro e Fave */
+  [
+    {n:3,  titolo:"Salute e benessere",  desc:"Gli Omega-3 EPA e DHA dello sgombro sono tra i nutrienti più documentati per la riduzione del rischio cardiovascolare: abbassano trigliceridi del 30%, riducono pressione arteriosa e aggregazione piastrinica. Le fave apportano proteine vegetali e folati per la sintesi del DNA."},
+    {n:12, titolo:"Consumo responsabile",desc:"Lo sgombro è pesce pelagico di piccola taglia con ciclo vitale breve: si riproduce rapidamente e subisce meno pressione da overfishing rispetto a tonno o spada. Scegliere pesce azzurro locale al posto di specie pregiate importate è una scelta di consumo sostenibile."},
+    {n:14, titolo:"Vita sott'acqua",     desc:"Lo sgombro al naturale certificato MSC garantisce pesca con metodi che minimizzano il bycatch (cattura accidentale). Privilegiare pesce certificato sostiene la gestione sostenibile degli stock ittici del Mediterraneo."},
+    {n:2,  titolo:"Fame zero",           desc:"Le fave sono uno dei legumi più antichi coltivati nel Mediterraneo: resistenti alla siccità, fissano l'azoto atmosferico nel suolo riducendo il fabbisogno di fertilizzanti sintetici e migliorando la fertilità del suolo per le colture successive."}
+  ],
+  /* 3 — Spaghetto Gragnano Peperoni */
+  [
+    {n:2,  titolo:"Fame zero",           desc:"La Pasta di Gragnano IGP è prodotta da piccoli pastifici artigianali che preservano una filiera corta dalla semola alla pasta. Sostenere queste produzioni locali contribuisce alla diversità dei sistemi alimentari e all'economia rurale campana."},
+    {n:3,  titolo:"Salute e benessere",  desc:"I peperoni sono tra le fonti vegetali più ricche di vitamina C (150 mg/100 g — tre volte l'arancia) e carotenoidi antiossidanti. Il condimento completamente vegetale, privo di grassi saturi, è coerente con le linee guida OMS per la prevenzione delle malattie croniche."},
+    {n:8,  titolo:"Lavoro dignitoso",    desc:"Il riconoscimento IGP della Pasta di Gragnano tutela i lavoratori dei pastifici artigianali locali garantendo prezzi equi e continuità occupazionale. Acquistare IGP significa sostenere direttamente l'economia e l'occupazione del territorio."},
+    {n:12, titolo:"Consumo responsabile",desc:"Piatto interamente vegetale con ingredienti locali e stagionali. I peperoni campani di stagione (luglio-ottobre) non richiedono serre riscaldate né trasporti a lunga distanza: l'impronta carbonica è minima rispetto a piatti con proteine animali importate."}
+  ],
+  /* 4 — Spigola e Lenticchie */
+  [
+    {n:3,  titolo:"Salute e benessere",  desc:"La spigola è pesce magro ad alto valore biologico con Omega-3 cardioprotettivi. Le lenticchie rosse hanno IG ≈ 21 e sono ricche di folati per la protezione del DNA. La combinazione pesce magro + legumi è tra i modelli alimentari più raccomandati per la prevenzione delle malattie croniche."},
+    {n:14, titolo:"Vita sott'acqua",     desc:"La spigola da pesca costiera artigianale (palamiti, reti da posta selettive) ha un impatto sugli ecosistemi marini molto inferiore rispetto all'allevamento intensivo in gabbie galleggianti, che produce inquinamento da farmaci e nutrienti nelle acque costiere."},
+    {n:12, titolo:"Consumo responsabile",desc:"Le lenticchie sono il legume con la più bassa impronta carbonica: 0,9 kg CO₂eq per kg di prodotto contro i 27 kg della carne bovina. Abbinare lenticchie alla spigola riduce significativamente il contenuto proteico animale del piatto mantenendo l'apporto proteico totale."},
+    {n:2,  titolo:"Fame zero",           desc:"Le lenticchie rosse decorticate non richiedono ammollo, cuociono in 20 minuti e sono tra le fonti proteiche vegetali più economiche ed accessibili. Rappresentano un modello di nutrizione adeguata accessibile a tutti i redditi."}
+  ],
+  /* 5 — Insalata Riso Tonno Olive */
+  [
+    {n:3,  titolo:"Salute e benessere",  desc:"Le olive di Gaeta DOP contengono fino a 300 mg/kg di idrossitirosolo, uno dei più potenti antiossidanti naturali con health claim EFSA riconosciuto per la protezione cardiovascolare. Il tonno apporta Omega-3 e proteine magre."},
+    {n:12, titolo:"Consumo responsabile",desc:"Il raffreddamento del riso cotto produce amido resistente che abbassa l'IG: una tecnica a zero sprechi che trasforma il riso avanzato in un alimento a più alto valore nutrizionale. Scegliere tonno certificato MSC (pesca sostenibile) riduce la pressione sugli stock ittici mediterranei."},
+    {n:14, titolo:"Vita sott'acqua",     desc:"Le olive di Gaeta DOP sono prodotte con metodi tradizionali senza additivi chimici, con un ciclo produttivo a basso impatto. Scegliere tonno MSC garantisce che la pesca non utilizzi metodi distruttivi per gli ecosistemi marini."},
+    {n:11, titolo:"Città sostenibili",   desc:"L'insalata di riso è un piatto freddo che non richiede cottura al momento del consumo: ideale per la ristorazione scolastica e collettiva perché riduce i consumi energetici della cucina e permette la preparazione in anticipo con conservazione sicura a 4°C."}
+  ],
+  /* 6 — Orzotto Alici di Cetara */
+  [
+    {n:3,  titolo:"Salute e benessere",  desc:"Le alici di Cetara hanno 3 g di Omega-3/100 g — il doppio del salmone d'allevamento. L'orzo integrale con i suoi beta-glucani riduce il colesterolo LDL (health claim EFSA). La combinazione è tra le più potenti per la salute cardiovascolare tra i piatti della tradizione mediterranea."},
+    {n:8,  titolo:"Lavoro dignitoso",    desc:"Il Presidio Slow Food delle Alici di Cetara tutela la sopravvivenza di una comunità di pescatori e trasformatori artigianali del borgo di Cetara (SA). Acquistare questo prodotto significa sostenere direttamente il reddito di una piccola comunità costiera tradizionale."},
+    {n:14, titolo:"Vita sott'acqua",     desc:"Le alici vengono pescate con lampara notturna da aprile a luglio nel rispetto dei cicli biologici della specie. La pesca con lampara è selettiva e non distrugge i fondali. Il Presidio Slow Food impone limiti di pesca compatibili con la riproduzione degli stock."},
+    {n:11, titolo:"Città sostenibili",   desc:"Cetara è un esempio di comunità costiera che ha costruito identità culturale e sviluppo economico sostenibile attorno a una risorsa ittica locale. Valorizzare le produzioni tradizionali del territorio è un modello di sviluppo locale sostenibile per le comunità costiere mediterranee."}
+  ],
+  /* 7 — Pasta Integrale Piselli */
+  [
+    {n:2,  titolo:"Fame zero",           desc:"I piselli sono legumi facilmente coltivabili anche in piccoli orti familiari, fissano l'azoto atmosferico migliorando la fertilità del suolo, e rappresentano una fonte proteica vegetale economica e accessibile coerente con l'obiettivo di eliminare la malnutrizione."},
+    {n:3,  titolo:"Salute e benessere",  desc:"La pasta integrale con piselli è un piatto a bassissimo indice glicemico con proteine vegetali complete. È coerente con le Linee Guida per una Sana Alimentazione Italiana (CREA 2018) che raccomandano di privilegiare cereali integrali e legumi per la prevenzione del diabete tipo 2."},
+    {n:12, titolo:"Consumo responsabile",desc:"Piatto interamente vegetale con ingredienti stagionali locali. Sostituire anche solo una porzione di proteine animali settimanali con proteine vegetali (piselli + cereali integrali) riduce l'impronta carbonica alimentare individuale di circa 1,5 kg CO₂eq a pasto."},
+    {n:15, titolo:"Vita sulla terra",    desc:"I Piselli della Piana del Sele sono una varietà locale coltivata in un'area agricola di pianura che richiede rotazioni colturali. I legumi nella rotazione riducono la necessità di fertilizzanti azotati sintetici, contribuendo alla salute del suolo agricolo."}
+  ],
+  /* 8 — Riso Carciofi Broccoli Verza */
+  [
+    {n:3,  titolo:"Salute e benessere",  desc:"Il sulforafano dei broccoli è la molecola alimentare più studiata in oncologia preventiva. La cinarina dei carciofi Paestum IGP protegge la funzionalità epatica. Il piatto è interamente vegetale, ipocalorico e ad alto contenuto di micronutrienti: un modello nutrizionale di prevenzione primaria."},
+    {n:12, titolo:"Consumo responsabile",desc:"Tre verdure di stagione autunno-invernale coltivate localmente, senza refrigerazione per il trasporto, con riso come unico cereale. L'impronta carbonica del piatto è tra le più basse possibili: stimata intorno a 0,5 kg CO₂eq per porzione, contro i 4–6 kg di un secondo di carne bovina."},
+    {n:15, titolo:"Vita sulla terra",    desc:"Il Carciofo di Paestum IGP è coltivato nei suoli alluvionali della Piana del Sele con tecniche tradizionali a basso impatto. La coltivazione del carciofo non richiede pesticidi intensivi e le foglie di scarto vengono compostate, chiudendo il ciclo della materia organica."},
+    {n:2,  titolo:"Fame zero",           desc:"Verza e broccoli sono verdure invernali povere ma nutrizionalmente eccellenti (ricche di vitamina C, K, glucosinolati). Il loro consumo è un modello di alimentazione sana accessibile: costano poco, si coltivano facilmente e hanno una densità nutrizionale altissima rispetto al prezzo."}
+  ],
+  /* 9 — Insalata Farro Pollo */
+  [
+    {n:3,  titolo:"Salute e benessere",  desc:"Piatto unico equilibrato: 28 g di proteine per porzione con un profilo aminoacidico completo, carboidrati a basso IG dal farro, e micronutrienti da tre verdure di stagione. Rappresenta il modello del 'piatto sano' raccomandato da Harvard e OMS per la prevenzione dell'obesità."},
+    {n:12, titolo:"Consumo responsabile",desc:"Utilizzare petto di pollo da filiera corta campana (km0) riduce drasticamente le emissioni legate al trasporto rispetto al pollo importato. Il pollo ha un'impronta carbonica 5 volte inferiore a quella del manzo. Il raffreddamento del farro a zero sprechi rende questa ricetta ottima per la gestione degli avanzi."},
+    {n:8,  titolo:"Lavoro dignitoso",    desc:"Scegliere pollo da filiera corta certificata campana significa sostenere allevatori locali con condizioni di lavoro trasparenti e tracciabili. La certificazione di filiera corta garantisce equità nella distribuzione del valore tra produttore, trasformatore e consumatore."},
+    {n:2,  titolo:"Fame zero",           desc:"Il farro semiperlato è un cereale antico campano con eccellente profilo nutrizionale (15% proteine, 7% fibre) che richiede meno fertilizzanti e irrigazione del frumento moderno. Reintrodurlo nell'alimentazione quotidiana diversifica le colture e riduce la dipendenza da poche varietà di cereali."}
+  ],
+  /* 10 — Linguine Limone Sorrento */
+  [
+    {n:2,  titolo:"Fame zero",           desc:"Il Limone di Sorrento IGP è coltivato sui terrazzamenti storici della penisola da secoli senza disboscare: un sistema agricolo tradizionale che produce cibo di qualità su suoli altrimenti inutilizzabili, dimostrando come l'agricoltura tradizionale possa contribuire alla sicurezza alimentare locale."},
+    {n:8,  titolo:"Lavoro dignitoso",    desc:"La coltivazione del Limone di Sorrento IGP sui terrazzamenti è un'attività ad alta intensità di lavoro manuale (raccolta, manutenzione dei muri a secco, costruzione delle pagliarelle) che sostiene l'occupazione locale e preserva un paesaggio agrario di altissimo valore culturale e turistico."},
+    {n:11, titolo:"Città sostenibili",   desc:"I terrazzamenti con limoneti della Penisola Sorrentina costituiscono un paesaggio culturale tutelato che contribuisce all'identità del territorio, all'attrazione turistica e alla prevenzione del dissesto idrogeologico (i muri a secco trattengono il suolo dalle frane)."},
+    {n:15, titolo:"Vita sulla terra",    desc:"I limoneti sorrentini sono un agrosistema tradizionale che ospita biodiversità: insetti impollinatori, uccelli nidificanti, flora spontanea tra i filari. I muri a secco sono habitat per rettili e invertebrati. Preservare queste colture tradizionali significa preservare interi ecosistemi agrari."}
+  ],
+  /* 11 — Zuppa Lenticchie Carciofi Cicoria */
+  [
+    {n:2,  titolo:"Fame zero",           desc:"La zuppa di lenticchie con verdure selvatiche è il paradigma della cucina povera mediterranea: nutriente, economica, con ingredienti reperibili localmente. Dimostra come sia possibile garantire un pasto ad alta densità nutrizionale con un costo minimo e ingredienti accessibili a tutti i redditi."},
+    {n:3,  titolo:"Salute e benessere",  desc:"La densità nutrizionale del piatto è eccezionale: proteine vegetali complete, inulina prebiotica, cinarina epatoprotettiva, ossalati ridotti dalla cottura, vitamina K, folati. Con sole 290 kcal per porzione è uno dei piatti con il miglior rapporto calorie/valore nutrizionale della cucina campana."},
+    {n:12, titolo:"Consumo responsabile",desc:"Le lenticchie hanno l'impronta carbonica più bassa tra tutte le fonti proteiche: 0,9 kg CO₂eq/kg. La cicoria selvatica raccolta nel territorio è a costo zero in termini di produzione. Il pane integrale avanzato diventa crostini: zero sprechi alimentari, in linea con l'obiettivo SDG 12.3 di dimezzare gli sprechi alimentari entro il 2030."},
+    {n:15, titolo:"Vita sulla terra",    desc:"La cicoria selvatica (Cichorium intybus) raccolta nei campi campani è una pianta spontanea commestibile che non richiede coltivazione. Il suo utilizzo in cucina valorizza la biodiversità vegetale selvatica e mantiene viva la conoscenza etnobotanica tradizionale campana."}
+  ],
+  /* 12 — Pasta alla Nerano Integrale */
+  [
+    {n:3,  titolo:"Salute e benessere",  desc:"La versione integrale riduce l'IG del 30% rispetto all'originale. Le zucchine di Nerano, coltivate in un microclima costiero unico, hanno una dolcezza naturale che permette di ridurre i formaggi aggiuntivi. Il Provolone del Monaco DOP da latte crudo apporta probiotici naturali e un profilo aromatico inimitabile."},
+    {n:8,  titolo:"Lavoro dignitoso",    desc:"Il Provolone del Monaco DOP è prodotto esclusivamente con latte di vacca Agerolese, razza autoctona dei Monti Lattari a rischio estinzione. Acquistare questo formaggio sostiene direttamente gli allevatori che mantengono in vita questa razza e preservano un'economia zootecnica montana tradizionale."},
+    {n:11, titolo:"Città sostenibili",   desc:"La Pasta alla Nerano è il piatto simbolo del borgo marinaro di Nerano (Massa Lubrense), un'icona gastronomica che genera economia turistica per una comunità costiera di poche centinaia di abitanti. Il patrimonio gastronomico tradizionale è un motore di sviluppo sostenibile per le comunità locali."},
+    {n:15, titolo:"Vita sulla terra",    desc:"La vacca Agerolese, razza autoctona dei Monti Lattari da cui si produce il latte per il Provolone del Monaco DOP, è classificata come razza a rischio estinzione dalla FAO. Acquistare formaggi DOP prodotti con razze autoctone è un atto concreto di preservazione della biodiversità zootecnica."}
+  ]
+];
+
+function buildSdgHtml(recipeId) {
+  const sdgs = sdgData[recipeId] || [];
+  if (!sdgs.length) return '';
+  const cards = sdgs.map(s => `
+    <div class="sdg-card">
+      <div class="sdg-badge sdg-${s.n}">
+        <div style="font-size:.85rem;font-weight:800;line-height:1">${s.n}</div>
+        <div style="font-size:.48rem;font-weight:600;letter-spacing:.02em;margin-top:1px;text-transform:uppercase;line-height:1.1">${s.titolo.split(' ').slice(0,2).join(' ')}</div>
+      </div>
+      <div class="sdg-text">
+        <div class="sdg-title">SDG ${s.n} — ${s.titolo}</div>
+        <div class="sdg-desc">${s.desc}</div>
+      </div>
+    </div>`).join('');
+  return `
+    <div class="sdg-section">
+      <div class="sdg-section-label">🌍 Collegamenti con gli Obiettivi dell'Agenda 2030 — Sustainable Development Goals</div>
+      <div class="sdg-grid">${cards}</div>
+    </div>`;
+}
+
+/* ── PRINT SCHEDA ── */
+function printSchedaById(id) {
+  // Make sure schede are rendered
+  if (document.getElementById('schede-grid').children.length === 0) renderSchede('all');
+  // Find the matching scheda by scanning for the recipe title
+  const r = data.find(x => x.id === id);
+  if (!r) return;
+  const all = document.querySelectorAll('#schede-grid .scheda');
+  let target = null;
+  all.forEach(s => { if (s.querySelector('.scheda-title') && s.querySelector('.scheda-title').textContent === r.title) target = s; });
+  if (!target) { renderSchede('all'); return printSchedaById(id); }
+  document.querySelectorAll('.scheda').forEach(s => s.classList.remove('printing'));
+  target.classList.add('printing');
+  const schedePanel = document.getElementById('view-schede');
+  const wasActive = schedePanel.classList.contains('active');
+  schedePanel.classList.add('active');
+  window.print();
+  if (!wasActive) schedePanel.classList.remove('active');
+  target.classList.remove('printing');
+}
+
 renderCards('all');
 renderSchede('all');
 </script>

@@ -265,6 +265,17 @@ footer{text-align:center;padding:1.8rem;font-size:.73rem;letter-spacing:.1em;tex
 }
 .scheda-print-btn:hover{background:var(--navy);color:#fff}
 
+/* ─── HACCP LINK BTN ──────────────────────────────── */
+.haccp-link-btn{
+  display:flex;align-items:center;justify-content:center;gap:.45rem;
+  width:100%;padding:.55rem 1rem;
+  border:none;border-top:1px solid rgba(44,62,80,.12);
+  background:#2C3E50;color:#fff;
+  font-family:'Crimson Pro',serif;font-size:.82rem;letter-spacing:.09em;
+  text-transform:uppercase;cursor:pointer;transition:background .2s;
+}
+.haccp-link-btn:hover{background:#1a252f}
+
 /* ─── PRINT STYLES ────────────────────────────────── */
 @media print{
   body{background:#fff !important;font-size:10pt;color:#000}
@@ -587,8 +598,21 @@ function loadRecipeInEditor(id) {
   currentEditId = id;
   const r = data.find(x => x.id === id);
   if (!r) return;
+  const ex = extraData[id] || {};
+  const appro = r.approfondimento || {};
+  const adapt = ex.adattamenti || {};
+  const sdgs  = sdgData[id] || [];
   const cats = [{v:'mare',l:'Mare & Pesce'},{v:'pasta',l:'Pasta & Cereali'},{v:'insalata',l:'Insalate'},{v:'legumi',l:'Legumi'},{v:'veg',l:'Verdure'}];
   const catOpts = cats.map(c => `<option value="${c.v}" ${r.cat===c.v?'selected':''}>${c.l}</option>`).join('');
+  const marchiOpts = ['DOP','IGP','PAT','Presidio Slow Food'].map(m=>`<option value="${m}" ${appro.marchio===m?'selected':''}>${m}</option>`).join('');
+  const sdgRows = sdgs.map((s,i)=>`
+    <div style="border:1px solid #2d3a5a;border-radius:3px;padding:.6rem;margin-bottom:.5rem">
+      <div style="display:grid;grid-template-columns:60px 1fr;gap:.4rem;margin-bottom:.3rem">
+        <div class="field-group" style="margin:0"><label>N° SDG</label><input type="number" id="ef-sdg-n-${i}" value="${s.n}" min="1" max="17"></div>
+        <div class="field-group" style="margin:0"><label>Titolo SDG</label><input id="ef-sdg-titolo-${i}" value="${esc(s.titolo)}"></div>
+      </div>
+      <div class="field-group" style="margin:0"><label>Descrizione collegamento</label><textarea id="ef-sdg-desc-${i}" style="min-height:70px">${esc(s.desc)}</textarea></div>
+    </div>`).join('');
   document.getElementById('editor-form-body').innerHTML = `
     <div class="field-section-title">📋 Informazioni base</div>
     <div class="field-group"><label>Nome del piatto</label><input id="ef-title" value="${esc(r.title)}"></div>
@@ -623,8 +647,27 @@ function loadRecipeInEditor(id) {
     <div class="field-section-title">🔬 Prevenzione oncologica</div>
     <div class="field-group"><textarea id="ef-antitum" class="tall">${esc(r.antitumorale)}</textarea></div>
     <div class="field-sep"></div>
+    <div class="field-section-title">💊 Diabete T2, Ipertensione &amp; Aterosclerosi</div>
+    <div class="field-group"><textarea id="ef-diabete" class="tall">${esc(ex.diabete||'')}</textarea></div>
+    <div class="field-sep"></div>
     <div class="field-section-title">🌿 Stagionalità</div>
     <div class="field-group"><input id="ef-stagione" value="${esc(r.stagione)}"></div>
+    <div class="field-sep"></div>
+    <div class="field-section-title">🏅 Eccellenza territoriale (DOP/IGP/PAT/Slow Food)</div>
+    <div class="field-group"><label>Nome prodotto</label><input id="ef-appro-nome" value="${esc(appro.nome||'')}"></div>
+    <div class="field-group"><label>Marchio</label><select id="ef-appro-marchio">${marchiOpts}</select></div>
+    <div class="field-group"><label>Descrizione approfondimento</label><textarea id="ef-appro-desc" class="tall">${esc(appro.descrizione||'')}</textarea></div>
+    <div class="field-sep"></div>
+    <div class="field-section-title">🍽 Adattamenti dietetici</div>
+    <div class="field-group"><label>🌱 Vegan</label><textarea id="ef-adapt-vegan">${esc(adapt.vegan||'')}</textarea></div>
+    <div class="field-group"><label>🥛 Intolleranti lattosio</label><textarea id="ef-adapt-lattosio">${esc(adapt.lattosio||'')}</textarea></div>
+    <div class="field-group"><label>🌾 Celiaci</label><textarea id="ef-adapt-celiaci">${esc(adapt.celiaci||'')}</textarea></div>
+    <div class="field-group"><label>☪ Halal</label><textarea id="ef-adapt-halal">${esc(adapt.halal||'')}</textarea></div>
+    <div class="field-group"><label>✡ Kosher</label><textarea id="ef-adapt-kosher">${esc(adapt.kosher||'')}</textarea></div>
+    <div class="field-sep"></div>
+    <div class="field-section-title">🌍 Obiettivi Agenda 2030 (${sdgs.length} SDG)</div>
+    <p style="font-size:.72rem;color:#8899cc;margin-bottom:.6rem">Modifica i testi dei ${sdgs.length} obiettivi collegati a questa ricetta</p>
+    ${sdgRows}
     <div class="field-sep"></div>
     <div class="field-section-title" style="color:#e07070">🗑 Elimina ricetta</div>
     <div class="field-group">
@@ -638,6 +681,9 @@ function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').rep
 function applyEdits() {
   const r = data.find(x => x.id === currentEditId);
   if (!r) return;
+  const id = currentEditId;
+
+  // ── data[] fields ──
   r.title       = document.getElementById('ef-title').value.trim();
   r.chef        = document.getElementById('ef-chef').value.trim();
   const newCat  = document.getElementById('ef-cat').value;
@@ -657,6 +703,36 @@ function applyEdits() {
   r.cottura     = document.getElementById('ef-cottura').value.trim();
   r.antitumorale= document.getElementById('ef-antitum').value.trim();
   r.stagione    = document.getElementById('ef-stagione').value.trim();
+
+  // ── approfondimento ──
+  r.approfondimento = {
+    nome:       document.getElementById('ef-appro-nome').value.trim(),
+    marchio:    document.getElementById('ef-appro-marchio').value,
+    descrizione:document.getElementById('ef-appro-desc').value.trim()
+  };
+
+  // ── extraData fields ──
+  if (!extraData[id]) extraData[id] = {};
+  extraData[id].diabete = document.getElementById('ef-diabete').value.trim();
+  extraData[id].adattamenti = {
+    vegan:    document.getElementById('ef-adapt-vegan').value.trim(),
+    lattosio: document.getElementById('ef-adapt-lattosio').value.trim(),
+    celiaci:  document.getElementById('ef-adapt-celiaci').value.trim(),
+    halal:    document.getElementById('ef-adapt-halal').value.trim(),
+    kosher:   document.getElementById('ef-adapt-kosher').value.trim()
+  };
+
+  // ── sdgData fields ──
+  const sdgs = sdgData[id] || [];
+  sdgs.forEach((s,i) => {
+    const nEl = document.getElementById(`ef-sdg-n-${i}`);
+    const tEl = document.getElementById(`ef-sdg-titolo-${i}`);
+    const dEl = document.getElementById(`ef-sdg-desc-${i}`);
+    if (nEl) s.n      = parseInt(nEl.value)||s.n;
+    if (tEl) s.titolo = tEl.value.trim();
+    if (dEl) s.desc   = dEl.value.trim();
+  });
+
   renderCards(currentCardFilter);
   renderSchede(currentSchedeFilter);
   buildEditorSelect();
@@ -710,11 +786,24 @@ function showToast(msg) {
    DOWNLOAD HTML
 ══════════════════════════════════════════════════ */
 function downloadHTML() {
-  const serialized = JSON.stringify(data, null, 2).replace(/<\/script>/g, '<\\/script>');
+  const serializedData     = JSON.stringify(data, null, 2).replace(/<\/script>/g, '<\\/script>');
+  const serializedExtra    = JSON.stringify(extraData, null, 2).replace(/<\/script>/g, '<\\/script>');
+  const serializedSdg      = JSON.stringify(sdgData, null, 2).replace(/<\/script>/g, '<\\/script>');
   let html = document.documentElement.outerHTML;
+  // Replace data[]
   html = html.replace(
     /\/\* ══+ DATA ══+\*\/[\s\S]*?^];/m,
-    `/* ${'═'.repeat(50)}\n   DATA\n${'═'.repeat(50)} */\nlet data = ${serialized};`
+    `/* ${'═'.repeat(50)}\n   DATA\n${'═'.repeat(50)} */\nlet data = ${serializedData};`
+  );
+  // Replace extraData[]
+  html = html.replace(
+    /const extraData = \[[\s\S]*?^\];/m,
+    `const extraData = ${serializedExtra};`
+  );
+  // Replace sdgData[]
+  html = html.replace(
+    /const sdgData = \[[\s\S]*?^\];/m,
+    `const sdgData = ${serializedSdg};`
   );
   const blob = new Blob([html], {type:'text/html;charset=utf-8'});
   const a = document.createElement('a');
@@ -788,6 +877,7 @@ function renderCards(filter) {
 function openModal(id) {
   const r = data.find(x => x.id===id);
   if (!r) return;
+  const ex = extraData[id] || {};
   const chipsHtml = r.ingChips.map(c => `<span class="ing-chip ${c.c}">${c.t}</span>`).join('');
   const appro = r.approfondimento || {};
   const marchioBadge = {DOP:'🏆 DOP', IGP:'🌿 IGP', 'PAT':'📜 PAT', 'Presidio Slow Food':'🐌 Presidio Slow Food'}[appro.marchio] || appro.marchio || '';
@@ -822,6 +912,8 @@ function openModal(id) {
           <p style="font-size:.9rem;line-height:1.65;font-weight:300;margin-top:.3rem">${r.procedimento}</p>
         </div>
         ${approHtml}
+        <div style="height:1px;background:linear-gradient(90deg,var(--navy),transparent);margin:.2rem 0"></div>
+        <div style="font-family:'Playfair Display',serif;font-size:1rem;color:var(--navy);letter-spacing:.04em">🩺 Analisi Nutrizionale</div>
         <div style="background:var(--mint);border-radius:3px;padding:.8rem 1rem">
           <div class="scheda-cell-label"><span>🩺</span> Motivazione nutrizionale</div>
           <p style="color:var(--motiv);font-size:.88rem;line-height:1.7;font-weight:300;margin-top:.3rem">${r.motivazione}</p>
@@ -834,6 +926,10 @@ function openModal(id) {
           <div class="scheda-cell-label" style="color:var(--purple)"><span>🔬</span> Prevenzione oncologica</div>
           <p style="color:var(--purple);font-size:.88rem;line-height:1.7;font-weight:300;margin-top:.3rem">${r.antitumorale}</p>
         </div>
+        ${ex.diabete ? `<div style="background:#FDEDEC;border-radius:3px;padding:.8rem 1rem;border-left:3px solid #C0392B">
+          <div class="scheda-cell-label" style="color:#C0392B"><span>💊</span> Prevenzione Diabete T2, Ipertensione &amp; Aterosclerosi</div>
+          <p style="color:#7b241c;font-size:.88rem;line-height:1.7;font-weight:300;margin-top:.3rem">${ex.diabete}</p>
+        </div>` : ''}
         <div>
           <div class="scheda-cell-label"><span>🌿</span> Stagionalità</div>
           <p style="font-size:.88rem;font-style:italic;opacity:.7;margin-top:.2rem">${r.stagione}</p>
@@ -846,6 +942,10 @@ function openModal(id) {
         <div class="macro"><div class="macro-val">${r.macros.grassi}g</div><span class="macro-label">grassi</span></div>
         <div class="macro-approx">⚠ valori per porzione stimati da tabelle CREA 2019 · calcolo approssimativo</div>
       </div>
+      <button class="haccp-link-btn" onclick="closeModal();goToHaccp(${id})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Vai alla scheda HACCP di questa ricetta →
+      </button>
     </div>`;
   document.getElementById('modal-overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -1073,6 +1173,10 @@ function renderSchede(filter) {
         <div class="macro"><div class="macro-val">${r.macros.grassi}g</div><span class="macro-label">grassi</span></div>
         <div class="macro-approx">⚠ valori per porzione stimati da tabelle CREA 2019 · calcolo approssimativo</div>
       </div>
+      <button class="haccp-link-btn" onclick="goToHaccp(${r.id})">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Vai alla scheda HACCP di questa ricetta →
+      </button>
     `;
     grid.appendChild(s);
   });
@@ -1386,6 +1490,28 @@ ${haccpFlow}
   const w = window.open('','_blank','width=900,height=700');
   w.document.write(html);
   w.document.close();
+}
+
+/* ── GO TO HACCP ── */
+function goToHaccp(id) {
+  // Switch to HACCP tab
+  const haccpTab = document.querySelectorAll('.view-tab')[2];
+  switchView('haccp', haccpTab);
+  // Render if needed
+  if (document.getElementById('haccp-grid').children.length === 0) renderHaccp('all');
+  // Scroll to the matching scheda
+  setTimeout(() => {
+    const r = data.find(x => x.id === id);
+    if (!r) return;
+    const all = document.querySelectorAll('#haccp-grid .scheda');
+    let target = null;
+    all.forEach(s => { if (s.querySelector('.scheda-title') && s.querySelector('.scheda-title').textContent === r.title) target = s; });
+    if (target) {
+      target.scrollIntoView({behavior:'smooth', block:'start'});
+      target.style.outline = '3px solid var(--terracotta)';
+      setTimeout(() => target.style.outline = '', 2000);
+    }
+  }, 150);
 }
 
 renderCards('all');

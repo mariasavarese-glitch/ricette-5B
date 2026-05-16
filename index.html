@@ -1004,6 +1004,156 @@ const extraData = [ /* HACCP aggiornato: stoccaggio refrigerato = CCP; ogni rice
 
 /* ══ RENDER HACCP ══════════════════════════════════════ */
 let currentHaccpFilter = 'all';
+function buildHaccpDiagram(fasi) {
+  // Classify fasi into categories
+  const ricezione   = fasi.find(f => f.nome.toLowerCase().includes('ricezion'));
+  const stocRef     = fasi.find(f => f.nome.toLowerCase().includes('stoccaggio') && !f.nome.toLowerCase().includes('dispensa'));
+  const stocDisp    = fasi.find(f => f.nome.toLowerCase().includes('dispensa'));
+  const remaining   = fasi.filter(f => f !== ricezione && f !== stocRef && f !== stocDisp);
+
+  // Layout constants
+  const W = 620, BW = 170, BH = 38, BRX = 6;
+  const CX = W/2;       // center x
+  const LX = 150;       // left branch center x (T controllata)
+  const RX = 450;       // right branch center x (T non controllata)
+  const COLORS = { ccp:'#e74c3c', cp:'#2C3E50', fifo:'#e67e22', text:'#1a1a2e' };
+
+  let y = 20;
+  let svgContent = '';
+
+  // helper: wrap text into lines
+  function wrapText(txt, maxW, fontSize) {
+    const words = txt.split(' ');
+    const lines = []; let cur = '';
+    const charPx = fontSize * 0.55;
+    words.forEach(w => {
+      const test = cur ? cur+' '+w : w;
+      if (test.length * charPx > maxW - 10) { lines.push(cur); cur = w; }
+      else cur = test;
+    });
+    if (cur) lines.push(cur);
+    return lines;
+  }
+
+  // helper: draw box (rect or ellipse)
+  function box(cx, cy, w, h, label, color, shape='rect', badge='') {
+    const lines = wrapText(label, w, 10);
+    const lineH = 13;
+    const textH = lines.length * lineH;
+    const bh = Math.max(h, textH + 14);
+    let el = '';
+    if (shape === 'ellipse') {
+      el = `<ellipse cx="${cx}" cy="${cy}" rx="${w/2}" ry="${bh/2}" fill="white" stroke="${color}" stroke-width="1.5"/>`;
+    } else {
+      el = `<rect x="${cx-w/2}" y="${cy-bh/2}" width="${w}" height="${bh}" rx="${BRX}" fill="white" stroke="${color}" stroke-width="${color===COLORS.ccp?2:1.5}" stroke-dasharray="${badge==='fifo'?'5,3':'none'}"/>`;
+    }
+    const ty = cy - (lines.length-1)*lineH/2;
+    const textEls = lines.map((l,i)=>`<text x="${cx}" y="${ty + i*lineH}" text-anchor="middle" font-family="Arial,sans-serif" font-size="10" fill="${COLORS.text}" font-weight="${color===COLORS.ccp?'600':'400'}">${l}</text>`).join('');
+    let badgeEl = '';
+    if (badge) {
+      const bc = badge==='ccp'?COLORS.ccp : badge==='fifo'?COLORS.fifo : COLORS.cp;
+      const bl = badge==='ccp'?'CCP' : badge==='fifo'?'CP·FIFO' : 'CP';
+      badgeEl = `<rect x="${cx+w/2-32}" y="${cy-bh/2-1}" width="32" height="13" rx="2" fill="${bc}"/>
+        <text x="${cx+w/2-16}" y="${cy-bh/2+9}" text-anchor="middle" font-family="Arial,sans-serif" font-size="7.5" fill="white" font-weight="700">${bl}</text>`;
+    }
+    return { svg: el+textEls+badgeEl, h: bh };
+  }
+
+  // helper: vertical arrow
+  function arrow(x, y1, y2) {
+    return `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2-6}" stroke="#888" stroke-width="1.2"/>
+      <polygon points="${x-4},${y2-6} ${x+4},${y2-6} ${x},${y2}" fill="#888"/>`;
+  }
+  // helper: horizontal line
+  function hline(x1,x2,y) {
+    return `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="#888" stroke-width="1.2"/>`;
+  }
+  // helper: vertical line (no arrow)
+  function vline(x,y1,y2) {
+    return `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="#888" stroke-width="1.2"/>`;
+  }
+
+  // ── INGREDIENTI (oval top) ──
+  const ingredH = 30;
+  svgContent += box(CX, y+ingredH/2, 160, ingredH, 'INGREDIENTI', COLORS.cp, 'ellipse').svg;
+  y += ingredH;
+
+  // arrow down to ricezione
+  svgContent += arrow(CX, y, y+25);
+  y += 25;
+
+  // ── RICEZIONE ──
+  const rNome = ricezione ? ricezione.nome.toUpperCase() : 'RICEZIONE MATERIE PRIME';
+  const rBadge = ricezione ? (ricezione.ccp ? 'ccp' : 'cp') : 'ccp';
+  const rColor = ricezione?.ccp ? COLORS.ccp : COLORS.cp;
+  const rBox = box(CX, y+BH/2, BW*1.4, BH, rNome, rColor, 'rect', rBadge);
+  svgContent += rBox.svg;
+  y += rBox.h;
+
+  // ── SPLIT to two branches ──
+  // horizontal line from center to left and right
+  const splitY = y + 20;
+  svgContent += vline(CX, y, splitY);
+  svgContent += hline(LX, RX, splitY);
+  svgContent += arrow(LX, splitY, splitY+20);
+  svgContent += arrow(RX, splitY, splitY+20);
+  y = splitY + 20;
+
+  // ── LEFT BRANCH: stoccaggio T controllata ──
+  const sNome = stocRef ? stocRef.nome.replace('Stoccaggio a T controllata — ','').replace('Stoccaggio refrigerato','Stoccaggio a T controllata').toUpperCase() : 'STOCCAGGIO A T CONTROLLATA';
+  const sBox = box(LX, y+BH/2, BW, BH, sNome, COLORS.ccp, 'rect', 'ccp');
+  svgContent += sBox.svg;
+  const leftBranchEndY = y + sBox.h;
+
+  // ── RIGHT BRANCH: stoccaggio T non controllata ──
+  const dNome = stocDisp ? 'STOCCAGGIO A T NON CONTROLLATA (DISPENSA)' : 'STOCCAGGIO A T NON CONTROLLATA';
+  const dBox = box(RX, y+BH/2, BW, BH, dNome, COLORS.fifo, 'rect', 'fifo');
+  svgContent += dBox.svg;
+  const rightBranchEndY = y + dBox.h;
+
+  // optional scongelamento under left branch
+  const maxBranchY = Math.max(leftBranchEndY, rightBranchEndY);
+  const joinY = maxBranchY + 35;
+
+  // arrows from branches down to join
+  svgContent += vline(LX, leftBranchEndY, joinY);
+  svgContent += vline(RX, rightBranchEndY, joinY);
+  svgContent += hline(LX, RX, joinY);
+  svgContent += arrow(CX, joinY, joinY+20);
+  y = joinY + 20;
+
+  // ── REMAINING PHASES ──
+  remaining.forEach((f, fi) => {
+    const fNome = f.nome.toUpperCase();
+    const fColor = f.ccp ? COLORS.ccp : COLORS.cp;
+    const fBadge = f.ccp ? 'ccp' : (f.nome.includes('dispensa') ? 'fifo' : 'cp');
+    const fBox = box(CX, y+BH/2, BW*1.5, BH, fNome, fColor, 'rect', fBadge);
+    svgContent += fBox.svg;
+    y += fBox.h;
+    // arrow (not after last)
+    if (fi < remaining.length - 1) {
+      svgContent += arrow(CX, y, y+18);
+      y += 18;
+    }
+  });
+
+  // ── SOMMINISTRAZIONE ──
+  svgContent += arrow(CX, y, y+22);
+  y += 22;
+  const somBox = box(CX, y+BH/2, BW*1.3, BH, 'SOMMINISTRAZIONE', COLORS.cp, 'rect', 'cp');
+  svgContent += somBox.svg;
+  y += somBox.h;
+
+  // ── PIATTO DA CONSUMARE (oval) ──
+  svgContent += arrow(CX, y, y+20);
+  y += 20;
+  const finalH = 30;
+  svgContent += box(CX, y+finalH/2, 160, finalH, 'PIATTO DA CONSUMARE', COLORS.cp, 'ellipse').svg;
+  y += finalH + 15;
+
+  return `<svg viewBox="0 0 ${W} ${y}" width="100%" xmlns="http://www.w3.org/2000/svg" style="max-width:620px;display:block;margin:0 auto;font-family:Arial,sans-serif">${svgContent}</svg>`;
+}
+
 function renderHaccp(filter) {
   currentHaccpFilter = filter;
   const grid = document.getElementById('haccp-grid');
@@ -1043,6 +1193,7 @@ function renderHaccp(filter) {
         <span class="adapt-label">${{vegan:'🌱 Vegan',lattosio:'🥛 Intolleranti lattosio',celiaci:'🌾 Celiaci',halal:'☪ Halal',kosher:'✡ Kosher'}[k]||k}</span>
         <p class="adapt-text">${v}</p>
       </div>`).join('');
+    const diagramSvg = buildHaccpDiagram(haccp.fasi);
     const s = document.createElement('div');
     s.className = 'scheda';
     s.style.animationDelay = `${i*.07}s`;
@@ -1067,12 +1218,16 @@ function renderHaccp(filter) {
           <div class="adapt-grid">${adaptHtml}</div>
         </div>
         <div class="scheda-cell full">
-          <div class="scheda-cell-label" style="color:var(--haccp-head)"><span>🔐</span> Piano HACCP — Diagramma di flusso con CCP</div>
+          <div class="scheda-cell-label" style="color:var(--haccp-head)"><span>🔐</span> Piano HACCP — Diagramma di flusso</div>
           <div class="haccp-legend">
             <span><span class="haccp-ccp-badge">CCP</span> Punto Critico di Controllo</span>
             <span><span class="haccp-ok-badge">CP</span> Punto di Controllo</span>
             <span><span class="haccp-fifo-badge">CP · FIFO</span> Dispensa / T ambiente</span>
           </div>
+          <div style="margin:1rem 0 .5rem;padding:.5rem;background:#f8f9fa;border-radius:4px;border:1px solid #e0e6f0">
+            ${diagramSvg}
+          </div>
+          <div class="scheda-cell-label" style="margin-top:1rem;color:var(--haccp-head)"><span>📋</span> Dettaglio pericoli e misure di controllo</div>
           <div class="haccp-flow" style="margin-top:.8rem">${flowHtml}</div>
         </div>
       </div>

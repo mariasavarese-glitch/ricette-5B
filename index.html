@@ -1642,9 +1642,32 @@ ${haccpFlow}
 <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
 </body></html>`;
 
-  const w = window.open('','_blank','width=900,height=700');
-  w.document.write(html);
-  w.document.close();
+  let printDiv = document.getElementById('_print_overlay');
+  if (!printDiv) {
+    printDiv = document.createElement('div');
+    printDiv.id = '_print_overlay';
+    document.body.appendChild(printDiv);
+  }
+  let printStyle = document.getElementById('_print_style');
+  if (!printStyle) {
+    printStyle = document.createElement('style');
+    printStyle.id = '_print_style';
+    printStyle.textContent = `
+      @media print {
+        body > *:not(#_print_overlay) { display: none !important; }
+        #_print_overlay { display: block !important; }
+      }
+      #_print_overlay { display: none; }
+    `;
+    document.head.appendChild(printStyle);
+  }
+  printDiv.innerHTML = html;
+  printDiv.style.display = 'block';
+  setTimeout(() => {
+    window.print();
+    printDiv.style.display = 'none';
+    printDiv.innerHTML = '';
+  }, 300);
 }
 
 /* ── GO TO HACCP ── */

@@ -1524,6 +1524,49 @@ function printSchedaById(id) {
     </div>`;
   }).join('');
 
+  /* ── Diagramma di flusso SVG per la stampa ── */
+  const printDiagramSvg = (() => {
+    const fasi = haccp.fasi;
+    if (!fasi || !fasi.length) return '';
+    const ricezione = fasi.find(f => f.nome.toLowerCase().includes('ricezion'));
+    const stocRef   = fasi.find(f => f.nome.toLowerCase().includes('stoccaggio') && !f.nome.toLowerCase().includes('dispensa'));
+    const stocDisp  = fasi.find(f => f.nome.toLowerCase().includes('dispensa'));
+    const remaining = fasi.filter(f => f !== ricezione && f !== stocRef && f !== stocDisp);
+    const W=560, BW=160, BH=36, BRX=5;
+    const CX=W/2, LX=130, RX=420;
+    const COLORS={ccp:'#e74c3c',cp:'#2C3E50',fifo:'#e67e22',text:'#1a1a2e'};
+    let y=18, svg='';
+    function wrapText(txt,maxW,fs){const words=txt.split(' ');const lines=[];let cur='';const cpx=fs*.55;words.forEach(w=>{const t=cur?cur+' '+w:w;if(t.length*cpx>maxW-8){lines.push(cur);cur=w;}else cur=t;});if(cur)lines.push(cur);return lines;}
+    function box(cx,cy,w,h,label,color,shape,badge){const lines=wrapText(label,w,9);const lh=12;const bh=Math.max(h,lines.length*lh+12);let el='';if(shape==='ellipse'){el=`<ellipse cx="${cx}" cy="${cy}" rx="${w/2}" ry="${bh/2}" fill="white" stroke="${color}" stroke-width="1.5"/>`;}else{el=`<rect x="${cx-w/2}" y="${cy-bh/2}" width="${w}" height="${bh}" rx="${BRX}" fill="white" stroke="${color}" stroke-width="${color===COLORS.ccp?2:1.5}" stroke-dasharray="${badge==='fifo'?'5,3':'none'}"/>`;}
+    const ty=cy-(lines.length-1)*lh/2;const te=lines.map((l,i)=>`<text x="${cx}" y="${ty+i*lh}" text-anchor="middle" font-family="Arial,sans-serif" font-size="9" fill="${COLORS.text}" font-weight="${color===COLORS.ccp?'600':'400'}">${l}</text>`).join('');let be='';if(badge){const bc=badge==='ccp'?COLORS.ccp:badge==='fifo'?COLORS.fifo:COLORS.cp;const bl=badge==='ccp'?'CCP':badge==='fifo'?'CP·FIFO':'CP';be=`<rect x="${cx+w/2-30}" y="${cy-bh/2-1}" width="30" height="12" rx="2" fill="${bc}"/><text x="${cx+w/2-15}" y="${cy-bh/2+8}" text-anchor="middle" font-family="Arial,sans-serif" font-size="7" fill="white" font-weight="700">${bl}</text>`;}return{svg:el+te+be,h:bh};}
+    function arrow(x,y1,y2){return `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2-5}" stroke="#999" stroke-width="1.1"/><polygon points="${x-3},${y2-5} ${x+3},${y2-5} ${x},${y2}" fill="#999"/>`;}
+    function hline(x1,x2,yy){return `<line x1="${x1}" y1="${yy}" x2="${x2}" y2="${yy}" stroke="#999" stroke-width="1.1"/>`;}
+    function vline(x,y1,y2){return `<line x1="${x}" y1="${y1}" x2="${x}" y2="${y2}" stroke="#999" stroke-width="1.1"/>`;}
+    const ih=28;svg+=box(CX,y+ih/2,150,ih,'INGREDIENTI',COLORS.cp,'ellipse','').svg;y+=ih;
+    svg+=arrow(CX,y,y+22);y+=22;
+    const rNome=ricezione?ricezione.nome.toUpperCase():'RICEZIONE MATERIE PRIME';
+    const rBadge=ricezione?(ricezione.ccp?'ccp':'cp'):'ccp';
+    const rColor=ricezione?.ccp?COLORS.ccp:COLORS.cp;
+    const rB=box(CX,y+BH/2,BW*1.35,BH,rNome,rColor,'rect',rBadge);svg+=rB.svg;y+=rB.h;
+    const splitY=y+18;svg+=vline(CX,y,splitY);svg+=hline(LX,RX,splitY);svg+=arrow(LX,splitY,splitY+18);svg+=arrow(RX,splitY,splitY+18);y=splitY+18;
+    const sNome=stocRef?stocRef.nome.replace('Stoccaggio a T controllata — ','').replace('Stoccaggio refrigerato','STOCCAGGIO T CONTROLLATA').toUpperCase():'STOCCAGGIO T CONTROLLATA';
+    const sB=box(LX,y+BH/2,BW,BH,sNome,COLORS.ccp,'rect','ccp');svg+=sB.svg;const lY=y+sB.h;
+    const dNome='STOCCAGGIO T NON CONTROLLATA (DISPENSA)';
+    const dB=box(RX,y+BH/2,BW,BH,dNome,COLORS.fifo,'rect','fifo');svg+=dB.svg;const rY=y+dB.h;
+    const maxY=Math.max(lY,rY);const joinY=maxY+30;
+    svg+=vline(LX,lY,joinY);svg+=vline(RX,rY,joinY);svg+=hline(LX,RX,joinY);svg+=arrow(CX,joinY,joinY+18);y=joinY+18;
+    remaining.forEach((f,fi)=>{
+      const fN=f.nome.toUpperCase();const fC=f.ccp?COLORS.ccp:COLORS.cp;const fBadge=f.ccp?'ccp':'cp';
+      const fB=box(CX,y+BH/2,BW*1.45,BH,fN,fC,'rect',fBadge);svg+=fB.svg;y+=fB.h;
+      if(fi<remaining.length-1){svg+=arrow(CX,y,y+16);y+=16;}
+    });
+    svg+=arrow(CX,y,y+20);y+=20;
+    const somB=box(CX,y+BH/2,BW*1.25,BH,'SOMMINISTRAZIONE',COLORS.cp,'rect','cp');svg+=somB.svg;y+=somB.h;
+    svg+=arrow(CX,y,y+18);y+=18;
+    const fh=26;svg+=box(CX,y+fh/2,150,fh,'PIATTO DA CONSUMARE',COLORS.cp,'ellipse','').svg;y+=fh+12;
+    return `<svg viewBox="0 0 ${W} ${y}" width="100%" style="max-width:520px;display:block;margin:0 auto" xmlns="http://www.w3.org/2000/svg">${svg}</svg>`;
+  })();
+
   const adaptCards = Object.entries(adapt).map(([k,v])=>`
     <div class="adapt-card">
       <span class="adapt-lbl">${{vegan:'🌱 Vegan',lattosio:'🥛 Lattosio',celiaci:'🌾 Celiaci',halal:'☪ Halal',kosher:'✡ Kosher'}[k]||k}</span>
@@ -1664,6 +1707,11 @@ h1{font-family:'Playfair Display',serif;font-size:18pt;font-weight:400;margin-bo
   <span><span class="hf-badge ok-badge" style="font-size:7pt">CP</span> &nbsp;Punto di Controllo</span>
   <span><span class="hf-badge fifo-badge" style="font-size:7pt">CP · FIFO</span> &nbsp;Dispensa / T ambiente</span>
 </div>
+<div style="background:#f8f9fa;border:1px solid #e0e6f0;border-radius:4px;padding:.4cm;margin-bottom:.5cm;break-inside:avoid">
+  <div style="font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:#2C3E50;font-weight:600;margin-bottom:.3cm">Diagramma di flusso</div>
+  ${printDiagramSvg}
+</div>
+<div style="font-size:7.5pt;letter-spacing:.12em;text-transform:uppercase;color:#2C3E50;font-weight:600;margin-bottom:.3cm">Dettaglio pericoli e misure di controllo</div>
 ${haccpFlow}
 
 <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>

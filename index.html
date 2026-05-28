@@ -973,6 +973,8 @@ function openModal(id) {
           <div class="scheda-cell-label"><span>🌿</span> Stagionalità</div>
           <p style="font-size:.88rem;font-style:italic;opacity:.7;margin-top:.2rem">${r.stagione}</p>
         </div>
+        ${buildModalAdattamentiHtml(ex.adattamenti)}
+        ${buildSdgHtml(id)}
       </div>
       <div class="macros-row" style="border-top:1px solid var(--sky2)">
         <div class="macro"><div class="macro-val">${r.macros.kcal}</div><span class="macro-label">kcal</span></div>
@@ -1284,6 +1286,8 @@ function renderHaccp(filter) {
 function filterHaccp(cat, btn) {
   document.querySelectorAll('#view-haccp .filter-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
+  const showBtn = document.getElementById('haccp-show-all-btn');
+  if (showBtn) showBtn.style.display = 'none';
   renderHaccp(cat);
 }
 
@@ -1522,6 +1526,21 @@ const sdgData = [
     {n:8,  titolo:"Lavoro dignitoso",    desc:"Scegliere gamberi km0 del Golfo di Napoli significa sostenere direttamente i pescatori artigianali campani. L'olio EVO Penisola Sorrentina DOP e il Limone di Sorrento IGP valorizzano i produttori locali certificati. Un piatto che, attraverso la scelta consapevole degli ingredienti, diventa un atto economico di solidarietà territoriale."}
   ]
 ];
+
+function buildModalAdattamentiHtml(adapt) {
+  if (!adapt || !Object.keys(adapt).length) return '';
+  const labels = {vegan:'🌱 Vegan',lattosio:'🥛 Lattosio',celiaci:'🌾 Celiaci',halal:'☪ Halal',kosher:'✡ Kosher'};
+  const cards = Object.entries(adapt).map(([k,v]) =>
+    '<div class="adapt-card adapt-'+k+'">' +
+    '<span class="adapt-label">'+(labels[k]||k)+'</span>' +
+    '<p class="adapt-text">'+v+'</p>' +
+    '</div>'
+  ).join('');
+  return '<div style="background:#F8F9FA;border-radius:3px;padding:.8rem 1rem;margin-top:.2rem">' +
+    '<div class="scheda-cell-label" style="margin-bottom:.5rem"><span>🍽</span> Adattamenti per esigenze dietetiche e religiose</div>' +
+    '<div class="adapt-grid">'+cards+'</div>' +
+    '</div>';
+}
 
 function buildSdgHtml(recipeId) {
   const sdgs = sdgData[recipeId] || [];
@@ -1810,20 +1829,42 @@ function goToHaccp(id) {
   // Switch to HACCP tab
   const haccpTab = document.querySelectorAll('.view-tab')[2];
   switchView('haccp', haccpTab);
-  // Render if needed
-  if (document.getElementById('haccp-grid').children.length === 0) renderHaccp('all');
-  // Scroll to the matching scheda
+  // Render solo la ricetta richiesta
+  renderHaccp('all');
   setTimeout(() => {
     const r = data.find(x => x.id === id);
     if (!r) return;
+    // Nascondi tutte le schede tranne quella richiesta
     const all = document.querySelectorAll('#haccp-grid .scheda');
     let target = null;
-    all.forEach(s => { if (s.querySelector('.scheda-title') && s.querySelector('.scheda-title').textContent === r.title) target = s; });
-    if (target) {
-      target.scrollIntoView({behavior:'smooth', block:'start'});
-      target.style.outline = '3px solid var(--terracotta)';
-      setTimeout(() => target.style.outline = '', 2000);
+    all.forEach(s => {
+      const titleEl = s.querySelector('.scheda-title');
+      if (titleEl && titleEl.textContent === r.title) {
+        target = s;
+        s.style.display = 'block';
+      } else {
+        s.style.display = 'none';
+      }
+    });
+    // Aggiungi pulsante "Mostra tutte le ricette" se non esiste già
+    const grid = document.getElementById('haccp-grid');
+    let btn = document.getElementById('haccp-show-all-btn');
+    if (!btn) {
+      btn = document.createElement('button');
+      btn.id = 'haccp-show-all-btn';
+      btn.style.cssText = 'display:block;margin:1rem auto 2rem;padding:.55rem 1.5rem;background:var(--navy);color:#fff;border:none;border-radius:3px;font-family:"Crimson Pro",serif;font-size:.88rem;letter-spacing:.08em;text-transform:uppercase;cursor:pointer;';
+      btn.textContent = '← Mostra tutte le ricette';
+      btn.onclick = () => {
+        all.forEach(s => s.style.display = 'block');
+        btn.style.display = 'none';
+        window.scrollTo({top: document.getElementById('view-haccp').offsetTop - 80, behavior:'smooth'});
+      };
+      grid.insertBefore(btn, grid.firstChild);
+    } else {
+      btn.style.display = 'block';
     }
+    // Scorri in cima
+    window.scrollTo({top: 0, behavior:'smooth'});
   }, 150);
 }
 
